@@ -1,12 +1,12 @@
 {
-  "name": "web3-plugin-template",
+  "name": "web3-plugin-ipfs-upload-manager",
   "version": "1.0.0",
-  "description": "Template plugin to extend web3.js with additional methods",
+  "description": "Web3.js Plugin for IPFS upload and register in contract",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
-  "homepage": "https://github.com/web3/web3.js-plugin-template#readme",
+  "homepage": "https://github.com/vladyslavarkavenko/web3-plugin-ipfs-upload-manager#readme",
   "bugs": {
-    "url": "https://github.com/web3/web3.js-plugin-template/issues"
+    "url": "https://github.com/vladyslavarkavenko/web3-plugin-ipfs-upload-manager/issues"
   },
   "scripts": {
     "lint": "eslint '{src,test}/**/*.ts'",
@@ -14,14 +14,13 @@
     "test": "jest --config=./test/jest.config.js"
   },
   "contributors": [
-    "ChainSafe <info@chainsafe.io>"
+    "ChainSafe <info@chainsafe.io>",
+    "Vladyslav Arkavenko <vladyslavarkavenko@gmail.com>"
   ],
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git@github.com:web3/web3.js-plugin-template.git"
-  },
-  "dependencies": {
+    "url": "git@github.com:vladyslavarkavenko/web3-plugin-ipfs-upload-manager.git"
   },
   "devDependencies": {
     "@chainsafe/eslint-config": "^2.0.0",
@@ -37,5 +36,6 @@
   },
   "peerDependencies": {
     "web3": ">= 4.0.3"
-  }
+  },
+  "dependencies": {}
 }
