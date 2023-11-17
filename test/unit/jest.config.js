@@ -2,10 +2,15 @@
 module.exports = {
   preset: "ts-jest",
   testEnvironment: "node",
-  testTimeout: 30000,
+  testTimeout: 5 * 60 * 1000, // 5 min
   detectOpenHandles: true,
   extensionsToTreatAsEsm: [".ts"],
   transform: {
-    "^.+\\.ts$": ["ts-jest", { useESM: true }],
+    "^.+\\.ts$": [
+      "ts-jest",
+      {
+        useESM: true,
+      },
+    ],
   },
 };

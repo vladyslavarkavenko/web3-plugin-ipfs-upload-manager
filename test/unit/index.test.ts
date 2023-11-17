@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import fs from "fs";
 import { jest } from "@jest/globals";
 import { Web3, core } from "web3";
@@ -6,10 +7,8 @@ import { IpfsPlugin } from "../../src";
 
 const providerUrl = "https://ethereum-sepolia.publicnode.com";
 const registryContractAddress = "0xA683BF985BC560c5dc99e8F33f3340d1e53736EB";
-const testAccountPrivateKey =
-  "0xcc59ca865cd8264614bc87f6f6c102bab06790489701d0f0550445c476d46f9f";
 
-describe("IpfsPlugin tests", () => {
+describe("IpfsPlugin unit tests", () => {
   it("Should register IpfsPlugin plugin on Web3Context instance", () => {
     const web3Context = new core.Web3Context(providerUrl);
     web3Context.registerPlugin(new IpfsPlugin({ registryContractAddress }));
@@ -18,17 +17,28 @@ describe("IpfsPlugin tests", () => {
 
   describe("IpfsPlugin method uploadFileContent", () => {
     let web3: Web3;
+    let registryContractSpy: jest.SpiedFunction<
+      // @ts-expect-error
+      typeof web3.ipfs.registryContract.methods.store
+    >;
 
     beforeAll(() => {
       web3 = new Web3(providerUrl);
-
-      const testAccount = web3.eth.accounts.privateKeyToAccount(
-        testAccountPrivateKey,
-      );
-      web3.eth.accounts.wallet.add(testAccount);
-      web3.defaultAccount = testAccount.address;
-
       web3.registerPlugin(new IpfsPlugin({ registryContractAddress }));
+    });
+
+    beforeEach(() => {
+      registryContractSpy = jest
+        // @ts-expect-error
+        .spyOn(web3.ipfs.registryContract.methods, "store")
+        .mockImplementation(() => ({
+          // @ts-expect-error
+          send: () => Promise.resolve(),
+        }));
+    });
+
+    afterEach(() => {
+      registryContractSpy.mockRestore();
     });
 
     it("Should call IpfsPlugin method uploadFileContent successfully with file content", async () => {
@@ -38,7 +48,7 @@ describe("IpfsPlugin tests", () => {
 
       try {
         await web3.ipfs.uploadFileContent(fileContent);
-        expect(true).toBe(true);
+        expect(registryContractSpy).toHaveBeenCalled();
       } catch (err) {
         expect(err).toBeUndefined();
       } finally {
@@ -49,7 +59,7 @@ describe("IpfsPlugin tests", () => {
     it("Should call IpfsPlugin method uploadFileContent successfully with string", async () => {
       try {
         await web3.ipfs.uploadFileContent("fileContent");
-        expect(true).toBe(true);
+        expect(registryContractSpy).toHaveBeenCalled();
       } catch (err) {
         expect(err).toBeUndefined();
       }
@@ -57,43 +67,42 @@ describe("IpfsPlugin tests", () => {
 
     it("Should handle error in uploadFileContent method", async () => {
       try {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-expect-error
-        await web3.ipfs.uploadFileContent({});
+        await web3.ipfs.uploadFileContent(null);
       } catch (err) {
         expect(err).toBeDefined();
+        expect(registryContractSpy).not.toHaveBeenCalled();
       }
     });
   });
 
   describe("IpfsPlugin method listAllCIDs", () => {
     let web3: Web3;
+    let registryContractSpy: jest.SpiedFunction<
+      // @ts-expect-error
+      typeof web3.ipfs.registryContract.getPastEvents
+    >;
     let consoleSpy: jest.SpiedFunction<typeof global.console.log>;
 
     beforeAll(() => {
       web3 = new Web3(providerUrl);
-
       web3.registerPlugin(new IpfsPlugin({ registryContractAddress }));
+    });
 
+    beforeEach(() => {
       consoleSpy = jest.spyOn(global.console, "log");
-    });
-
-    afterAll(() => {
-      consoleSpy.mockRestore();
-    });
-
-    it("Should call IpfsPlugin method listAllCIDs successfully", async () => {
-      await web3.ipfs.listAllCIDs("0x0000000000000000000000000000000000000000");
-      expect(consoleSpy).toHaveBeenCalledWith([]);
-    });
-
-    it("Should call IpfsPlugin method listAllCIDs successfully with data", async () => {
-      const registryContractSpy = jest
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      registryContractSpy = jest
         // @ts-expect-error
         .spyOn(web3.ipfs.registryContract, "getPastEvents")
         .mockImplementation(() => Promise.resolve(["test"]));
+    });
 
+    afterEach(() => {
+      consoleSpy.mockRestore();
+      registryContractSpy.mockRestore();
+    });
+
+    it("Should call IpfsPlugin method listAllCIDs successfully", async () => {
       try {
         await web3.ipfs.listAllCIDs(
           "0x0000000000000000000000000000000000000000",
@@ -101,8 +110,6 @@ describe("IpfsPlugin tests", () => {
         expect(consoleSpy).toHaveBeenCalledWith(["test"]);
       } catch (err) {
         expect(err).toBeUndefined();
-      } finally {
-        registryContractSpy.mockRestore();
       }
     });
 

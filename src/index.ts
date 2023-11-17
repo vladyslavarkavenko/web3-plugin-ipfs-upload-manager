@@ -1,4 +1,4 @@
-import type { Address } from "web3";
+import type { Address, Block, Numbers } from "web3";
 import { Contract, Web3PluginBase } from "web3";
 import type { Helia } from "helia";
 import { createHelia } from "helia";
@@ -6,10 +6,6 @@ import { strings } from "@helia/strings";
 import { unixfs } from "@helia/unixfs";
 
 import registryContractAbi from "./artifacts/registryContractAbi";
-
-type IpfsPluginOptions = {
-  registryContractAddress: Address;
-};
 
 export class IpfsPlugin extends Web3PluginBase {
   public pluginNamespace = "ipfs";
@@ -19,9 +15,9 @@ export class IpfsPlugin extends Web3PluginBase {
 
   private heliaInstance?: Helia;
 
-  constructor({ registryContractAddress }: IpfsPluginOptions) {
+  constructor(options: { registryContractAddress: Address }) {
     super();
-    this.registryContractAddress = registryContractAddress;
+    this.registryContractAddress = options.registryContractAddress;
   }
 
   // We lazily instantiate it, because we need to make sure Web3 registered the plugin first.
@@ -69,19 +65,31 @@ export class IpfsPlugin extends Web3PluginBase {
   ): Promise<void> {
     const cid = await this.executeWithHelia((helia) => {
       if (typeof fileContent === "string") {
-        const s = strings(helia);
-        return s.add(fileContent);
+        return strings(helia).add(fileContent);
       } else {
-        const u = unixfs(helia);
-        return u.addBytes(fileContent);
+        return unixfs(helia).addBytes(fileContent);
       }
     });
     await this.registryContract.methods.store(cid.toString()).send();
   }
 
+  private async getLatestBlockNumber(): Promise<Numbers> {
+    const { number } = await this.requestManager.send<
+      "eth_getBlockByNumber",
+      Block
+    >({
+      method: "eth_getBlockByNumber",
+      params: ["latest", false],
+    });
+    return number;
+  }
+
   public async listAllCIDs(ownerAddress: Address): Promise<void> {
+    const latestBlockNumber = await this.getLatestBlockNumber();
     const events = await this.registryContract.getPastEvents("CIDStored", {
       filter: { owner: ownerAddress },
+      fromBlock: Number(latestBlockNumber) - 50000, // 50000 is max limit
+      toBlock: latestBlockNumber,
     });
     console.log(events);
   }
