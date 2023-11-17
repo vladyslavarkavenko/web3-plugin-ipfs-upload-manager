@@ -1,5 +1,5 @@
 import type { Address, Block, Numbers } from "web3";
-import { Contract, Web3PluginBase } from "web3";
+import { Contract, Web3PluginBase, validator } from "web3";
 import type { Helia } from "helia";
 import { createHelia } from "helia";
 import { strings } from "@helia/strings";
@@ -60,19 +60,6 @@ export class IpfsPlugin extends Web3PluginBase {
     }
   }
 
-  public async uploadFileContent(
-    fileContent: Uint8Array | string,
-  ): Promise<void> {
-    const cid = await this.executeWithHelia((helia) => {
-      if (typeof fileContent === "string") {
-        return strings(helia).add(fileContent);
-      } else {
-        return unixfs(helia).addBytes(fileContent);
-      }
-    });
-    await this.registryContract.methods.store(cid.toString()).send();
-  }
-
   private async getLatestBlockNumber(): Promise<Numbers> {
     const { number } = await this.requestManager.send<
       "eth_getBlockByNumber",
@@ -84,7 +71,29 @@ export class IpfsPlugin extends Web3PluginBase {
     return number;
   }
 
+  public async uploadFileContent(
+    fileContent: Uint8Array | string,
+  ): Promise<void> {
+    const cid = await this.executeWithHelia((helia) => {
+      if (typeof fileContent === "string") {
+        return strings(helia).add(fileContent);
+      }
+      if (fileContent instanceof Uint8Array) {
+        return unixfs(helia).addBytes(fileContent);
+      }
+
+      throw new Error(
+        "Provided fileContent is not a valid Uint8Array or String",
+      );
+    });
+    await this.registryContract.methods.store(cid.toString()).send();
+  }
+
   public async listAllCIDs(ownerAddress: Address): Promise<void> {
+    if (!validator.isAddress(ownerAddress)) {
+      throw new Error("Provided ownerAddress is not a valid address");
+    }
+
     const latestBlockNumber = await this.getLatestBlockNumber();
     const events = await this.registryContract.getPastEvents("CIDStored", {
       filter: { owner: ownerAddress },
