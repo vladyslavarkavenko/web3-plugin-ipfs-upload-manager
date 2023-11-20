@@ -1,10 +1,16 @@
-import type { Address, Block, Numbers } from "web3";
-import { Contract, Web3PluginBase, validator } from "web3";
+import type { Address } from "web3";
+import {
+  Contract,
+  eth,
+  FMT_BYTES,
+  FMT_NUMBER,
+  validator,
+  Web3PluginBase,
+} from "web3";
 import type { Helia } from "helia";
 import { createHelia } from "helia";
 import { strings } from "@helia/strings";
 import { unixfs } from "@helia/unixfs";
-
 import registryContractAbi from "./artifacts/registryContractAbi";
 
 export class IpfsPlugin extends Web3PluginBase {
@@ -60,17 +66,6 @@ export class IpfsPlugin extends Web3PluginBase {
     }
   }
 
-  private async getLatestBlockNumber(): Promise<Numbers> {
-    const { number } = await this.requestManager.send<
-      "eth_getBlockByNumber",
-      Block
-    >({
-      method: "eth_getBlockByNumber",
-      params: ["latest", false],
-    });
-    return number;
-  }
-
   public async uploadFileContent(
     fileContent: Uint8Array | string,
   ): Promise<void> {
@@ -94,7 +89,10 @@ export class IpfsPlugin extends Web3PluginBase {
       throw new Error("Provided ownerAddress is not a valid address");
     }
 
-    const latestBlockNumber = await this.getLatestBlockNumber();
+    const latestBlockNumber = await eth.getBlockNumber(this, {
+      number: FMT_NUMBER.NUMBER,
+      bytes: FMT_BYTES.HEX,
+    });
     const events = await this.registryContract.getPastEvents("CIDStored", {
       filter: { owner: ownerAddress },
       fromBlock: Number(latestBlockNumber) - 50000, // 50000 is max limit
