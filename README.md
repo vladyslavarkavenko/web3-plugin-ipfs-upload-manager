@@ -7,6 +7,10 @@ Before using `IpfsPlugin`, ensure you have web3.js installed in your project. Th
 ```bash
 npm install web3-plugin-ipfs-upload-manager
 ```
+or
+```bash
+yarn add web3-plugin-ipfs-upload-manager
+```
 
 ## Setup
 To use the IpfsPlugin, import it into your project and register it with your web3 instance:
@@ -17,6 +21,12 @@ import { IpfsPlugin } from "web3-plugin-ipfs-upload-manager";
 const web3 = new Web3("[provider-url]");
 web3.registerPlugin(new IpfsPlugin({ registryContractAddress: "[contract-address]" }));
 ```
+For testing in Sepolia network you can use our contract:
+```javascript
+const web3 = new Web3("https://ethereum-sepolia.publicnode.com");
+web3.registerPlugin(new IpfsPlugin({ registryContractAddress: "0xA683BF985BC560c5dc99e8F33f3340d1e53736EB" }));
+```
+
 
 ## Usage
 ### Uploading file content
